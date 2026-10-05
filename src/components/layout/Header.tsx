@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
-  const [profile, setProfile] = useState<Profile>(store.currentProfile);
+  const [profile, setProfile] = useState<Profile | null>(store.currentProfile);
   const [profiles, setProfiles] = useState<Profile[]>(store.profiles);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -149,62 +149,64 @@ export const Header: React.FC = () => {
             </button>
 
             {/* Quick Demo Switcher Dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowRoleMenu(!showRoleMenu)}
-                className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-medium transition cursor-pointer"
-                title="Switch active user to test student, faculty, or admin permissions"
-              >
-                <RefreshCw className="w-3.5 h-3.5 text-indigo-600" />
-                <span className="hidden md:inline">User:</span>
-                <span className="font-semibold text-slate-900 truncate max-w-[100px]">{profile.full_name.split(' ')[0]}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </button>
+            {profile && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowRoleMenu(!showRoleMenu)}
+                  className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-medium transition cursor-pointer"
+                  title="Switch active user to test student, faculty, or admin permissions"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-indigo-600" />
+                  <span className="hidden md:inline">User:</span>
+                  <span className="font-semibold text-slate-900 truncate max-w-[100px]">{profile.full_name.split(' ')[0]}</span>
+                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                </button>
 
-              {showRoleMenu && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95">
-                  <div className="px-3 py-1.5 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-                    <span>Quick User Simulator</span>
-                    <span className="text-[10px] text-emerald-600 lowercase font-mono">@sode-edu.in</span>
-                  </div>
-                  <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
-                    {profiles.slice(0, 15).map((p) => (
+                {showRoleMenu && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95">
+                    <div className="px-3 py-1.5 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                      <span>Quick User Simulator</span>
+                      <span className="text-[10px] text-emerald-600 lowercase font-mono">@sode-edu.in</span>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
+                      {profiles.slice(0, 15).map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            store.switchUser(p.id);
+                            setShowRoleMenu(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer ${
+                            p.id === profile?.id ? 'bg-indigo-50/70' : ''
+                          }`}
+                        >
+                          <div className="truncate mr-2">
+                            <p className="text-xs font-medium text-slate-900 truncate">{p.full_name}</p>
+                            <p className="text-[11px] text-slate-500 font-mono truncate">{p.email}</p>
+                          </div>
+                          <div className="shrink-0">{getRoleBadge(p.role)}</div>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="p-2 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-400">Total {profiles.length} users</span>
                       <button
-                        key={p.id}
                         type="button"
                         onClick={() => {
-                          store.switchUser(p.id);
                           setShowRoleMenu(false);
+                          setShowLoginModal(true);
                         }}
-                        className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer ${
-                          p.id === profile.id ? 'bg-indigo-50/70' : ''
-                        }`}
+                        className="text-indigo-600 hover:underline font-semibold"
                       >
-                        <div className="truncate mr-2">
-                          <p className="text-xs font-medium text-slate-900 truncate">{p.full_name}</p>
-                          <p className="text-[11px] text-slate-500 font-mono truncate">{p.email}</p>
-                        </div>
-                        <div className="shrink-0">{getRoleBadge(p.role)}</div>
+                        Login by Email →
                       </button>
-                    ))}
+                    </div>
                   </div>
-                  <div className="p-2 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400">Total {profiles.length} users</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowRoleMenu(false);
-                        setShowLoginModal(true);
-                      }}
-                      className="text-indigo-600 hover:underline font-semibold"
-                    >
-                      Login by Email →
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* Announcements notification icon */}
             <div className="relative">
@@ -242,19 +244,39 @@ export const Header: React.FC = () => {
               )}
             </div>
 
-            {/* Current Active User Badge */}
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-              <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold ring-2 ring-indigo-500/20">
-                {profile.full_name[0]}
-              </div>
-              <div className="hidden lg:block text-left">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-slate-900 leading-tight truncate max-w-[130px]">{profile.full_name}</span>
-                  {getRoleBadge(profile.role)}
+            {/* Current Active User Badge & Sign Out Button */}
+            {profile ? (
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+                <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold ring-2 ring-indigo-500/20">
+                  {profile.full_name[0]}
                 </div>
-                <div className="text-[10px] text-slate-400 font-mono truncate max-w-[130px]">{profile.email}</div>
+                <div className="hidden lg:block text-left">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-slate-900 leading-tight truncate max-w-[130px]">{profile.full_name}</span>
+                    {getRoleBadge(profile.role)}
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-mono truncate max-w-[130px]">{profile.email}</div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => store.logout()}
+                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition ml-1 cursor-pointer"
+                  title="Sign Out to Institutional Login Screen"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
-            </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowLoginModal(true)}
+                className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

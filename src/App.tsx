@@ -18,8 +18,12 @@ import { ProctoringReview } from './features/admin/ProctoringReview';
 import { ExportsAndPrintables } from './features/admin/ExportsAndPrintables';
 import { AuditLogViewer } from './features/admin/AuditLogViewer';
 
+import { Profile } from './types';
+import { LoginPage } from './features/auth/LoginPage';
+
 export const App: React.FC = () => {
-  const [profile, setProfile] = useState(store.currentProfile);
+  const [profile, setProfile] = useState<Profile>(store.currentProfile);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(store.isLoggedIn);
   const [activeTab, setActiveTab] = useState<string>(() => {
     return store.currentProfile.role === 'student' ? 'student-dashboard' : 'exam-floor';
   });
@@ -27,7 +31,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     return store.subscribe(() => {
       setProfile(store.currentProfile);
-      // If role changed and current tab is incompatible, auto-switch
+      setIsLoggedIn(store.isLoggedIn);
       if (store.currentProfile.role === 'student' && !activeTab.startsWith('student')) {
         setActiveTab('student-dashboard');
       } else if (store.currentProfile.role !== 'student' && activeTab.startsWith('student')) {
@@ -35,6 +39,16 @@ export const App: React.FC = () => {
       }
     });
   }, [activeTab]);
+
+  if (!isLoggedIn) {
+    return (
+      <LoginPage
+        onLoginSuccess={() => {
+          setActiveTab(store.currentProfile.role === 'student' ? 'student-dashboard' : 'exam-floor');
+        }}
+      />
+    );
+  }
 
   const renderContent = () => {
     switch (activeTab) {

@@ -74,6 +74,7 @@ export class PortalStore {
   announcements: Announcement[];
   auditLogs: AuditLog[];
   currentProfile: Profile;
+  isLoggedIn: boolean = false;
   listeners: Array<() => void> = [];
 
   constructor() {
@@ -115,10 +116,12 @@ export class PortalStore {
     ]);
     this.auditLogs = getStorage('audit_logs', []);
 
-    // Set active profile: resolve saved user ID or fall back to Section A Faculty
-    const savedUserId = getStorage('current_user_id', 'user-fac1');
-    const matchedProfile = this.profiles.find((p) => p.id === savedUserId);
-    this.currentProfile = matchedProfile || this.profiles.find((p) => p.id === 'user-fac1') || this.profiles[0];
+    // Set active profile and authentication status
+    const savedUserId = getStorage<string | null>('current_user_id', null);
+    const savedLoggedIn = getStorage<boolean>('is_logged_in', false);
+    const matchedProfile = savedUserId ? this.profiles.find((p) => p.id === savedUserId) : null;
+    this.currentProfile = matchedProfile || this.profiles[0];
+    this.isLoggedIn = Boolean(savedLoggedIn && matchedProfile);
 
     // Immediately persist fresh synced profiles and sections
     this.saveAll();
@@ -151,6 +154,7 @@ export class PortalStore {
     setStorage('announcements', this.announcements);
     setStorage('audit_logs', this.auditLogs);
     setStorage('current_user_id', this.currentProfile.id);
+    setStorage('is_logged_in', this.isLoggedIn);
   }
 
   // --- AUTH & ROLES ---
@@ -180,6 +184,7 @@ export class PortalStore {
     }
 
     this.currentProfile = user;
+    this.isLoggedIn = true;
     this.logAudit('INSTITUTIONAL_LOGIN', 'profile', user.id, { email: user.email, role: user.role });
     this.notify();
     return { success: true, profile: user };
@@ -189,15 +194,33 @@ export class PortalStore {
     const user = this.profiles.find((p) => p.id === userId);
     if (user) {
       this.currentProfile = user;
+      this.isLoggedIn = true;
       this.notify();
     }
   }
 
+  setCurrentProfile(userId: string) {
+    this.switchUser(userId);
+  }
+
+  logout() {
+    this.isLoggedIn = false;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY_PREFIX + 'is_logged_in');
+    }
+    this.notify();
+  }
+
   logAudit(action: string, entityType: string, entityId: string, metadata: any = {}) {
+    const actorId = this.currentProfile ? this.currentProfile.id : 'system';
+    const actorName = this.currentProfile
+      ? `${this.currentProfile.full_name} (${this.currentProfile.role.toUpperCase()})`
+      : 'System User';
+
     this.auditLogs.unshift({
       id: 'log-' + Math.random().toString(36).substring(2, 9),
-      actor_id: this.currentProfile.id,
-      actor_name: `${this.currentProfile.full_name} (${this.currentProfile.role.toUpperCase()})`,
+      actor_id: actorId,
+      actor_name: actorName,
       action,
       entity_type: entityType,
       entity_id: entityId,
