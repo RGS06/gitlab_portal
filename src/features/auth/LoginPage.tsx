@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { store } from '../../services/store';
-import { Profile } from '../../types';
 import { 
   GraduationCap, 
   Lock, 
@@ -9,11 +8,7 @@ import {
   XCircle, 
   AlertCircle, 
   ArrowRight, 
-  ShieldCheck,
-  User,
-  School,
-  KeyRound,
-  BookOpen
+  ShieldCheck
 } from 'lucide-react';
 
 interface LoginPageProps {
@@ -24,10 +19,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  const profiles = store.profiles;
-  const facultyProfiles = profiles.filter((p) => p.role === 'faculty' || p.role === 'admin');
-  const sampleStudents = profiles.filter((p) => p.role === 'student').slice(0, 5);
 
   const cleanInputEmail = email.trim().toLowerCase();
   const hasTypedAt = cleanInputEmail.includes('@');
@@ -58,16 +49,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         if (onLoginSuccess) onLoginSuccess();
       }, 500);
     }
-  };
-
-  const handleSelectQuickProfile = (p: Profile) => {
-    setError(null);
-    setSuccessMsg(null);
-    store.setCurrentProfile(p.id);
-    setSuccessMsg(`Logged in as ${p.full_name} (${p.role.toUpperCase()})`);
-    setTimeout(() => {
-      if (onLoginSuccess) onLoginSuccess();
-    }, 400);
   };
 
   return (
@@ -176,65 +157,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-
-          {/* Quick Demo Selector */}
-          <div className="pt-4 border-t border-slate-800 space-y-3">
-            <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-teal-400" />
-                Quick Lab Demo Accounts
-              </span>
-              <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">Click to switch</span>
-            </div>
-
-            <div className="space-y-1.5 text-xs">
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Faculty & Admin</div>
-              <div className="grid grid-cols-1 gap-1.5">
-                {facultyProfiles.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => handleSelectQuickProfile(p)}
-                    className="w-full bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 p-2 rounded-lg text-left transition flex items-center justify-between cursor-pointer group"
-                  >
-                    <div>
-                      <div className="font-semibold text-slate-200 text-xs group-hover:text-teal-400 transition">
-                        {p.full_name}
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-mono">{p.email}</div>
-                    </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                      p.role === 'admin' ? 'bg-purple-950 text-purple-300 border border-purple-800/50' : 'bg-blue-950 text-blue-300 border border-blue-800/50'
-                    }`}>
-                      {p.role.toUpperCase()}
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pt-2">Sample Students (145 Total)</div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                {sampleStudents.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => handleSelectQuickProfile(p)}
-                    className="bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 p-2 rounded-lg text-left transition flex items-center justify-between cursor-pointer group"
-                  >
-                    <div className="truncate">
-                      <div className="font-semibold text-slate-200 text-xs group-hover:text-teal-400 transition truncate">
-                        {p.full_name}
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-mono">{p.roll_number}</div>
-                    </div>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/50 shrink-0">
-                      STUDENT
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       </main>
 
