@@ -303,15 +303,6 @@ export const Header: React.FC = () => {
               </div>
             </div>
 
-            {/* Domain Enforcement Alert */}
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2.5 text-xs text-blue-900">
-              <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <div className="leading-relaxed">
-                <span className="font-bold">Strict Domain Policy:</span> Only accounts ending with{' '}
-                <span className="font-mono font-bold text-blue-950 bg-blue-100 px-1 py-0.2 rounded">@sode-edu.in</span> are authorized. All other formats (@gmail, @yahoo, etc.) are ignored and rejected.
-              </div>
-            </div>
-
             <form onSubmit={handleInstitutionalLogin} className="mt-4 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -325,7 +316,7 @@ export const Header: React.FC = () => {
                       setLoginEmail(e.target.value);
                       setLoginError(null);
                     }}
-                    placeholder="e.g. raghugs.cs@sode-edu.in or usn@sode-edu.in"
+                    placeholder="@sode-edu.in"
                     className={`w-full text-xs px-3.5 py-2.5 pl-9 rounded-xl border font-mono transition focus:outline-hidden ${
                       isInvalidFormat
                         ? 'border-red-400 bg-red-50/30 text-red-900 focus:ring-2 focus:ring-red-400'

@@ -73,11 +73,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <p className="text-xs text-slate-400">GitLab Learning & Assessment Portal</p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/50">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>Strict Institutional SSO: <strong className="text-slate-200">@sode-edu.in</strong></span>
-        </div>
       </header>
 
       {/* Main Login Card Area */}
@@ -111,9 +106,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                 <span>Institutional Email</span>
-                <span className="text-[11px] text-teal-400 font-mono">Domain: @sode-edu.in</span>
               </label>
 
               <div className="relative">
@@ -121,7 +115,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. raghugs.cs@sode-edu.in or 4mw25cs001@sode-edu.in"
+                  placeholder="@sode-edu.in"
                   className={`w-full bg-slate-950/90 border ${
                     isInvalidFormat
                       ? 'border-red-500 text-red-200 focus:ring-red-500'
@@ -143,7 +137,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               {isInvalidFormat && (
                 <p className="text-[11px] text-red-400 mt-1.5 flex items-center gap-1 font-medium">
                   <XCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span>Only official @sode-edu.in emails are permitted.</span>
+                  <span>Please enter your @sode-edu.in email address.</span>
                 </p>
               )}
             </div>
@@ -153,7 +147,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               disabled={isInvalidFormat}
               className="w-full bg-teal-600 hover:bg-teal-500 text-white font-semibold py-2.5 px-4 rounded-xl text-sm transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-teal-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>Sign In with @sode-edu.in</span>
+              <span>Sign In</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
@@ -161,9 +155,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       </main>
 
       {/* Footer */}
-      <footer className="px-6 py-3 border-t border-slate-800/80 bg-slate-900/60 text-center text-xs text-slate-500 relative z-10 flex items-center justify-between">
+      <footer className="px-6 py-3 border-t border-slate-800/80 bg-slate-900/60 text-center text-xs text-slate-500 relative z-10 flex items-center justify-center">
         <span>© 2026 Shri Madhwa Vadiraja Institute of Technology & Management (SMVITM)</span>
-        <span className="font-mono text-slate-400 text-[11px]">Strict Domain Enforcement: @sode-edu.in</span>
       </footer>
     </div>
   );
