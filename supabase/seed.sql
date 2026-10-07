@@ -22,6 +22,8 @@ VALUES
 ON CONFLICT (section_id, batch_code) DO NOTHING;
 
 -- 3. FACULTY & ADMIN PROFILES
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;
+
 INSERT INTO public.profiles (id, roll_number, full_name, email, role, section_id, active)
 VALUES
   ('30000000-0000-0000-0000-000000000001', 'ADMIN01', 'System Administrator', 'admin@sode-edu.in', 'admin', NULL, true),

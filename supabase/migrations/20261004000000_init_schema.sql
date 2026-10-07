@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS public.batches (
 
 -- 3. PROFILES TABLE (Linked with Supabase Auth)
 CREATE TABLE IF NOT EXISTS public.profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     roll_number TEXT UNIQUE,
     full_name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
@@ -47,6 +47,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMPTZ DEFAULT now(),
     CONSTRAINT chk_sode_edu_domain CHECK (email ~* '^[A-Za-z0-9._%+-]+@sode-edu\.in$')
 );
+
+-- Drop auth.users FK constraint if it exists (allows pre-seeding the 145 student/faculty roster before auth signup)
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;
 
 -- 4. UNITS (12 Lab Units from Course Syllabus)
 CREATE TABLE IF NOT EXISTS public.units (
@@ -341,52 +344,97 @@ ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Profiles: Users can read own profile; faculty/admin can read/manage all
+DROP POLICY IF EXISTS "Profiles read own" ON public.profiles;
 CREATE POLICY "Profiles read own" ON public.profiles FOR SELECT USING (auth.uid() = id OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
+
+DROP POLICY IF EXISTS "Profiles admin manage" ON public.profiles;
 CREATE POLICY "Profiles admin manage" ON public.profiles FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
 
 -- Sections & Batches: Read by all authenticated; write by faculty/admin
+DROP POLICY IF EXISTS "Sections readable" ON public.sections;
 CREATE POLICY "Sections readable" ON public.sections FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Sections admin" ON public.sections;
 CREATE POLICY "Sections admin" ON public.sections FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
+
+DROP POLICY IF EXISTS "Batches readable" ON public.batches;
 CREATE POLICY "Batches readable" ON public.batches FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Batches admin" ON public.batches;
 CREATE POLICY "Batches admin" ON public.batches FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
 
 -- Units & Videos: Published units readable by authenticated students; all readable by faculty/admin
+DROP POLICY IF EXISTS "Units read" ON public.units;
 CREATE POLICY "Units read" ON public.units FOR SELECT TO authenticated USING (published = true OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
+
+DROP POLICY IF EXISTS "Units admin" ON public.units;
 CREATE POLICY "Units admin" ON public.units FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
+
+DROP POLICY IF EXISTS "Videos read" ON public.videos;
 CREATE POLICY "Videos read" ON public.videos FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.units WHERE units.id = videos.unit_id AND (units.published = true OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')))));
+
+DROP POLICY IF EXISTS "Videos admin" ON public.videos;
 CREATE POLICY "Videos admin" ON public.videos FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
 
 -- Video Progress: Student reads own; write through functions or faculty/admin
+DROP POLICY IF EXISTS "Video progress read own" ON public.video_progress;
 CREATE POLICY "Video progress read own" ON public.video_progress FOR SELECT USING (auth.uid() = student_id OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
+
+DROP POLICY IF EXISTS "Video progress update own" ON public.video_progress;
 CREATE POLICY "Video progress update own" ON public.video_progress FOR ALL USING (auth.uid() = student_id OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
 
 -- Questions: Students CANNOT read is_correct from mcq_options before submit, or reference answers from viva_questions!
 -- MCQ Questions readable
+DROP POLICY IF EXISTS "MCQ questions read" ON public.mcq_questions;
 CREATE POLICY "MCQ questions read" ON public.mcq_questions FOR SELECT TO authenticated USING (active = true OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
+
+DROP POLICY IF EXISTS "MCQ options read student" ON public.mcq_options;
 CREATE POLICY "MCQ options read student" ON public.mcq_options FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
+
+DROP POLICY IF EXISTS "Viva questions student protected" ON public.viva_questions;
 CREATE POLICY "Viva questions student protected" ON public.viva_questions FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
 
 -- Exam Sessions: Read by authenticated; manage by faculty/admin
+DROP POLICY IF EXISTS "Sessions read" ON public.exam_sessions;
 CREATE POLICY "Sessions read" ON public.exam_sessions FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Sessions faculty" ON public.exam_sessions;
 CREATE POLICY "Sessions faculty" ON public.exam_sessions FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
 
 -- Session Students: Student reads own; faculty reads/manages all
+DROP POLICY IF EXISTS "Session students read own" ON public.session_students;
 CREATE POLICY "Session students read own" ON public.session_students FOR SELECT USING (auth.uid() = student_id OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
+
+DROP POLICY IF EXISTS "Session students faculty" ON public.session_students;
 CREATE POLICY "Session students faculty" ON public.session_students FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
 
 -- Attempts & Answers: Students read/write own; faculty reads all
+DROP POLICY IF EXISTS "Attempts read own" ON public.attempts;
 CREATE POLICY "Attempts read own" ON public.attempts FOR SELECT USING (auth.uid() = student_id OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
+
+DROP POLICY IF EXISTS "Attempts faculty" ON public.attempts;
 CREATE POLICY "Attempts faculty" ON public.attempts FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
+
+DROP POLICY IF EXISTS "Attempt answers read own" ON public.attempt_answers;
 CREATE POLICY "Attempt answers read own" ON public.attempt_answers FOR SELECT USING (EXISTS (SELECT 1 FROM public.attempts WHERE attempts.id = attempt_answers.attempt_id AND (attempts.student_id = auth.uid() OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')))));
+
+DROP POLICY IF EXISTS "Viva answers read own" ON public.viva_answers;
 CREATE POLICY "Viva answers read own" ON public.viva_answers FOR SELECT USING (EXISTS (SELECT 1 FROM public.attempts WHERE attempts.id = viva_answers.attempt_id AND (attempts.student_id = auth.uid() OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')))));
 
 -- Proctor events: Write own, read own or faculty
+DROP POLICY IF EXISTS "Proctor events insert" ON public.proctor_events;
 CREATE POLICY "Proctor events insert" ON public.proctor_events FOR INSERT WITH CHECK (auth.uid() = student_id);
+
+DROP POLICY IF EXISTS "Proctor events select" ON public.proctor_events;
 CREATE POLICY "Proctor events select" ON public.proctor_events FOR SELECT USING (auth.uid() = student_id OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
 
 -- Announcements: Read by all; write by faculty/admin
+DROP POLICY IF EXISTS "Announcements read" ON public.announcements;
 CREATE POLICY "Announcements read" ON public.announcements FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Announcements write" ON public.announcements;
 CREATE POLICY "Announcements write" ON public.announcements FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));
 
 -- Audit Logs: Read/write by faculty/admin only
+DROP POLICY IF EXISTS "Audit logs faculty only" ON public.audit_logs;
 CREATE POLICY "Audit logs faculty only" ON public.audit_logs FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('faculty', 'admin')));

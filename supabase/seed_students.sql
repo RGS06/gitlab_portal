@@ -2,6 +2,8 @@
 -- Course: 25CSAE370 (Project Management with Git)
 -- Sourced from: Updated 2026-2027 ODD Sem CSE Student List.xlsx
 
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;
+
 INSERT INTO public.profiles (id, roll_number, full_name, email, role, section_id, batch_id, active)
 VALUES
   ('60000000-0000-0000-0000-000000000001', '4MW25CS001', 'ADITYA NAYAK', 'aditya.25cs001@sode-edu.in', 'student', '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', true),
